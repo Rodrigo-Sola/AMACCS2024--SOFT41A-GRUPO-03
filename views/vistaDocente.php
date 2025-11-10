@@ -24,10 +24,18 @@ function generarVistasDocentes() {
     
     // Generar HTML
     $html = '<div class="container py-5">';
-    $html .= '<h3 class="mb-4 text-center">Disponibilidad de Docentes</h3>';
+    $html .= '<h3 class="mb-4 text-center">Administración de Docentes</h3>';
     $html .= '<br>';
-    $html .= '<a href="logout.php" class="btn btn-danger mb-4">Cerrar Sesión</a>';
-    $html .= '<div class="row justify-content-center g-4">';
+    $html .= '<div class="d-flex justify-content-between align-items-center mb-4">';
+    $html .= '<a href="logout.php" class="btn btn-danger">Cerrar Sesión</a>';
+    $html .= '<div class="col-md-4">';
+    $html .= '<div class="input-group">';
+    $html .= '<span class="input-group-text"><i class="bi bi-search"></i></span>';
+    $html .= '<input type="text" class="form-control" id="buscarDocente" placeholder="Buscar docente...">';
+    $html .= '</div>';
+    $html .= '</div>';
+    $html .= '</div>';
+    $html .= '<div class="row justify-content-center g-4" id="listaDocentes">';
     
     $contador = 1;
     foreach ($docentes as $nombreCompleto => $datos) {
@@ -152,16 +160,10 @@ function generarModalEditar($nombreCompleto, $detalles, $id) {
     $html .= '<label for="estado' . $id . '" class="form-label">Estado de Disponibilidad:</label>';
     $html .= '<select class="form-select" id="estado' . $id . '" name="estado" required>';
     $html .= '<option value="disponible" selected>Disponible</option>';
-    $html .= '<option value="ocupado">Atendiendo estudiante</option>';
-    $html .= '<option value="revisando">Revisando tareas</option>';
+    $html .= '<option value="ocupado">En Clases</option>';
     $html .= '<option value="reunion">En reunión</option>';
-    $html .= '<option value="laboratorio">En laboratorio</option>';
-    $html .= '<option value="almuerzo">En almuerzo</option>';
+    $html .= '<option value="Ausente">Ausente</option>';
     $html .= '</select>';
-    $html .= '</div>';
-    $html .= '<div class="mb-3">';
-    $html .= '<label for="notas' . $id . '" class="form-label">Notas adicionales (opcional):</label>';
-    $html .= '<textarea class="form-control" id="notas' . $id . '" name="notas" rows="3" placeholder="Ej: Regreso en 15 minutos"></textarea>';
     $html .= '</div>';
     $html .= '<div class="d-flex justify-content-end gap-2">';
     $html .= '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>';
@@ -364,8 +366,9 @@ echo generarVistasDocentes();
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Disponibilidad de Docentes</title>
+  <title>Administrar Docentes</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
   <style>
     body {
@@ -422,8 +425,8 @@ echo generarVistasDocentes();
     .status-red { background-color: #f8d7da; color: #721c24; }
 
     .btn-editar {
-      background-color: #28a745;
-      color: #fff;
+      background-color: #EF5350;
+      color: #ffd5af;
       border-radius: 10px;
       padding: 0.4rem 1rem;
       font-weight: 500;
@@ -436,7 +439,7 @@ echo generarVistasDocentes();
     }
 
     .btn-horario {
-      background-color: #0d6efd;
+      background-color: #EF5350;
       color: #fff;
       border-radius: 10px;
       padding: 0.4rem 1rem;
@@ -461,13 +464,13 @@ echo generarVistasDocentes();
     }
 
     .modal-header {
-      background-color: #0d6efd;
+      background-color: #EF5350;
       color: white;
       border-radius: 15px 15px 0 0;
     }
 
     .modal-header.editar {
-      background-color: #28a745;
+      background-color: #ffd5af;
     }
 
     .table {
@@ -476,7 +479,7 @@ echo generarVistasDocentes();
     }
 
     .table thead {
-      background-color: #0d6efd;
+      background-color: #EF5350;
       color: white;
     }
 
@@ -519,6 +522,36 @@ echo generarVistasDocentes();
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+  // Funcionalidad de búsqueda
+  const inputBusqueda = document.getElementById('buscarDocente');
+  const listaDocentes = document.getElementById('listaDocentes');
+
+  if (inputBusqueda && listaDocentes) {
+    inputBusqueda.addEventListener('input', function(e) {
+      const busqueda = e.target.value.toLowerCase().trim();
+      // Seleccionar las columnas que contienen las tarjetas (tolerante a diferentes clases)
+      const tarjetas = listaDocentes.querySelectorAll('.col-md-4, .col-sm-6, .docente-card');
+
+      Array.from(tarjetas).forEach(tarjetaWrapper => {
+        // Si la tarjeta fue pasada directamente como .docente-card, buscar el wrapper col
+        let tarjeta = tarjetaWrapper.classList.contains('docente-card') ? tarjetaWrapper : tarjetaWrapper.querySelector('.docente-card') || tarjetaWrapper;
+
+        const nombreEl = tarjeta.querySelector('.docente-nombre');
+        const areaEl = tarjeta.querySelector('.docente-area');
+        const nombreDocente = nombreEl ? nombreEl.textContent.toLowerCase() : '';
+        const aula = areaEl ? areaEl.textContent.toLowerCase() : '';
+
+        if (nombreDocente.includes(busqueda) || aula.includes(busqueda)) {
+          // mostrar el elemento columna si existe, si no mostrar la tarjeta
+          if (tarjetaWrapper.style) tarjetaWrapper.style.display = '';
+        } else {
+          if (tarjetaWrapper.style) tarjetaWrapper.style.display = 'none';
+        }
+      });
+    });
+  }
+
+  // Lógica existente de días de la semana
   const diasSemana = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
   const hoy = new Date();
   const diaActual = diasSemana[hoy.getDay()];
@@ -535,10 +568,12 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   const rango = obtenerRangoHora(horaActual);
-  if (!rango) return; // Fuera del horario lectivo
+  // Si no hay un rango (fuera horario lectivo) no haremos la comprobación por filas,
+  // pero seguiremos con la comprobación basada en config/detalles.json.
 
-  // Recorre cada docente
-  document.querySelectorAll(".docente-card").forEach(card => {
+  // Recorre cada docente (solo si estamos en un rango horario definido)
+  if (rango) {
+    document.querySelectorAll(".docente-card").forEach(card => {
     const modalId = card.querySelector(".btn-horario").getAttribute("data-bs-target");
     const tabla = document.querySelector(`${modalId} table`);
     const filas = tabla.querySelectorAll("tbody tr");
@@ -558,15 +593,73 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     });
 
-    const estado = card.querySelector(".status-badge");
-    if (estaOcupado) {
-      estado.textContent = "En clase";
-      estado.className = "status-badge status-red";
-    } else {
-      estado.textContent = "Disponible";
-      estado.className = "status-badge status-green";
-    }
-  });
+      const estado = card.querySelector(".status-badge");
+      if (estaOcupado) {
+        estado.textContent = "En clase";
+        estado.className = "status-badge status-red";
+      } else {
+        estado.textContent = "Disponible";
+        estado.className = "status-badge status-green";
+      }
+    });
+  }
+
+  // Además, sincronizar con config/detalles.json para bloquear/mostrar "En clase" según hora del navegador
+  async function actualizarEstadoEnClase_vistaDocente(){
+    try{
+      const resp = await fetch('../config/detalles.json');
+      if(!resp.ok) return;
+      const datos = await resp.json();
+      if(!Array.isArray(datos)) return;
+      console.debug('[vistaDocente] actualizarEstadoEnClase_vistaDocente: entries', datos.length);
+
+      const normalize = s => (''+s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      const dias = ["domingo","lunes","martes","miercoles","jueves","viernes","sabado"];
+      const ahora = new Date();
+      const hoyNorm = normalize(dias[ahora.getDay()]);
+      const ahoraMin = ahora.getHours()*60 + ahora.getMinutes();
+
+      const porDocente = {};
+      datos.forEach(d=>{
+        const nombre = `${d.nombre_docente||''} ${d.apellido_docente||''}`.trim();
+        if(!nombre) return;
+        if(!porDocente[nombre]) porDocente[nombre]=[];
+        porDocente[nombre].push(d);
+      });
+
+      Object.keys(porDocente).forEach(nombre=>{
+        const clases = porDocente[nombre];
+        const enClase = clases.some(c=>{
+          const diaNorm = normalize(c.dia||'');
+          if(diaNorm !== hoyNorm) return false;
+          const ha = (c.ha||c.hora_inicio||c.h_inicio||'')+'';
+          const hf = (c.hf||c.hora_fin||c.h_fin||'')+'';
+          const parse = t=>{ if(!t) return null; const p=t.split(':'); if(p.length<2) return null; const h=parseInt(p[0],10); const m=parseInt(p[1],10)||0; if(isNaN(h)||isNaN(m)) return null; return h*60+m; };
+          const haMin = parse(ha); const hfMin = parse(hf);
+          if(haMin===null||hfMin===null) return false;
+          if(hfMin<haMin) return false;
+          return ahoraMin>=haMin && ahoraMin<hfMin;
+        });
+
+        console.debug('[vistaDocente] docente', nombre, 'enClase', enClase);
+        // actualizar badge si existe
+        document.querySelectorAll('.docente-card').forEach(card=>{
+          const nEl = card.querySelector('.docente-nombre');
+          if(!nEl) return;
+          const normalize = s => (''+s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+          if(normalize(nEl.textContent.trim())===normalize(nombre)){
+            const badge = card.querySelector('.status-badge');
+            if(badge){
+              if(enClase){ badge.textContent='En clase'; badge.className='status-badge status-red'; }
+            }
+          }
+        });
+      });
+    }catch(e){ console.warn('actualizarEstadoEnClase_vistaDocente',e); }
+  }
+
+  actualizarEstadoEnClase_vistaDocente();
+  setInterval(actualizarEstadoEnClase_vistaDocente, 60*1000);
 });
 </script>
 
